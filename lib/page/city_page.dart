@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 
 class CityPage extends StatefulWidget {
 
-  const CityPage({super.key});
+  final String? selectedCity;
+
+  const CityPage({super.key, this.selectedCity});
 
   @override
   State<StatefulWidget> createState() {
+
     return _CityPageState();
   }
 
@@ -13,7 +16,13 @@ class CityPage extends StatefulWidget {
 
 class _CityPageState extends State<CityPage> {
   final List<String> cities = ['Seoul', 'Tokyo', 'Inchon'];
-  String? selectedCity;
+  String? selected;
+
+  @override
+  void initState() {
+    super.initState();
+    selected = widget.selectedCity;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,18 +37,18 @@ class _CityPageState extends State<CityPage> {
                     return RadioListTile<String>(
                         title: Text(cities[index]),
                         value: cities[index],
-                        groupValue: selectedCity,
+                        groupValue: selected,
                         onChanged: (value) {
                           setState(() {
-                            selectedCity = value;
+                            selected = value;
                           });
                         });
                   })
           ),
           Padding(padding: const EdgeInsets.all(16),
             child: ElevatedButton(
-                onPressed: selectedCity != null
-                    ? () => Navigator.pop(context, selectedCity)
+                onPressed: selected != null
+                    ? () => Navigator.pop(context, selected)
                     : null,
                 child: const Text('선택완료')),)
         ],

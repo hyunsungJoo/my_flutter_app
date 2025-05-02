@@ -24,10 +24,11 @@ class ForecastPage extends StatefulWidget {
 // _의미는 비공개(private)
 class _ForecastPageStage extends State<ForecastPage> {
 
-  late final ForecastController _forecastController;
+  ForecastController? _forecastController;
   late Future<void> _initFuture;
 
   String? _city = 'Seoul'; // 최초도시
+  TemperatureUnit _currentUnit = TemperatureUnit.celsius;
 
   @override
   void initState() {
@@ -37,13 +38,13 @@ class _ForecastPageStage extends State<ForecastPage> {
 
   void _loadForecast() {
     _forecastController = ForecastController(_city!);
-    _initFuture = _forecastController.init();
+    _initFuture = _forecastController!.init();
   }
 
   void _selectCity() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => CityPage())
+      MaterialPageRoute(builder: (_) => CityPage(selectedCity: _city,))
     );
     if (result != null && result != _city) {
       setState(() {
@@ -63,7 +64,7 @@ class _ForecastPageStage extends State<ForecastPage> {
           return Center(child: Text("에러 발생: ${snapshot.error}"));
 
 
-      final forecast = _forecastController.forecast;
+      final forecast = _forecastController!.forecast;
 
         return Scaffold(
             appBar: AppBar(
@@ -78,19 +79,31 @@ class _ForecastPageStage extends State<ForecastPage> {
                   child: Padding(
                     padding: const EdgeInsets.only(right:16.0),
                     child: Text(
-                        WeatherUtil.temperatureLabels[TemperatureUnit.celsius]!,
+                        WeatherUtil.temperatureLabels[_currentUnit]!,
                         style: TextStyle(fontSize: 22, fontWeight:  FontWeight.bold)
                     ),
                   ),
                 )
               ],
               centerTitle: true,),
-            body: Padding(padding:
+            body: GestureDetector(
+            onDoubleTap: () {
+              setState(() {
+                // 현재 단위가 섭씨이면 화씨로 변경하고
+                // 화씨이면 섭씨로 변경
+                _currentUnit = _currentUnit == TemperatureUnit.celsius
+                    ? TemperatureUnit.fahrenheit
+                    : TemperatureUnit.celsius;
+
+              });
+        },
+
+            child: Padding(padding:
             EdgeInsets.symmetric(vertical: 32.0),
               child: Stack(
                 children: [
 
-                  getWeatherImage(_forecastController.nowWeather.weatherDescription),
+                  getWeatherImage(_forecastController!.nowWeather.weatherDescription),
 
                   Positioned(
                       left: 0, right: 0, top: 100.0,
@@ -105,6 +118,12 @@ class _ForecastPageStage extends State<ForecastPage> {
                             },
                             children: forecast.days.map((day) {
                               Weather dailyWeather = day.hourlyWeather[0];
+
+                              final maxTemp = _currentUnit == TemperatureUnit.celsius
+                                ? day.max : Temperature.celsiusToFahrenheit(day.max);
+
+                              final minTemp = _currentUnit == TemperatureUnit.celsius
+                                  ? day.min : Temperature.celsiusToFahrenheit(day.min);
 
                               return TableRow(
                                   children: [
@@ -121,10 +140,10 @@ class _ForecastPageStage extends State<ForecastPage> {
                                       ,)),
                                     TableCell(child: Padding(
                                       padding: const EdgeInsets.all(4.0),
-                                      child: Text(day.max.toString()),)),
+                                      child: Text(maxTemp.toString()),)),
                                     TableCell(child: Padding(
                                       padding: const EdgeInsets.all(4.0),
-                                      child: Text(day.min.toString()),))
+                                      child: Text(minTemp.toString()),))
                                   ]
                               );
                             }).toList(),
@@ -138,14 +157,14 @@ class _ForecastPageStage extends State<ForecastPage> {
                           child: Column(
                             children: <Widget>[
                               Text(WeatherUtil.weatherDescription(
-                                  _forecastController.nowWeather),
+                                  _forecastController!.nowWeather),
                                 style: Theme
                                     .of(context)
                                     .textTheme
                                     .headlineLarge,),
                               Text(WeatherUtil.currentTemperature(
-                                  TemperatureUnit.celsius,
-                                  _forecastController.nowWeather),
+                                  _currentUnit,
+                                  _forecastController!.nowWeather),
                                 style: Theme
                                     .of(context)
                                     .textTheme
@@ -156,8 +175,8 @@ class _ForecastPageStage extends State<ForecastPage> {
               )
               ,
             )
+        )
         );
-
   }
 
   );
