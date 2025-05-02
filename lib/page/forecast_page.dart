@@ -41,7 +41,16 @@ class _ForecastPageStage extends State<ForecastPage> {
   }
 
   void _selectCity() async {
-
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => CityPage())
+    );
+    if (result != null && result != _city) {
+      setState(() {
+        _city = result;
+        _loadForecast();
+      });
+    }
   }
 
   @override
